@@ -25,6 +25,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
     let statusBarItem = NSStatusBar.system.statusItem(withLength: 27)
     let conn = _CGSDefaultConnection()
 
+    var stringAttributes: [NSAttributedString.Key : NSObject] = [:]
+
     static var darkModeEnabled = false
 
     fileprivate func configureApplication() {
@@ -57,9 +59,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
     }
 
     fileprivate func configureMenuBarIcon() {
-        updateDarkModeStatus()
-        statusBarItem.button?.cell = StatusItemCell()
-        statusBarItem.image = NSImage(named: "default") // This icon appears when switching spaces when cell length is variable width.
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = NSTextAlignment.center
+
+        stringAttributes = [
+            NSAttributedString.Key.font: NSFont.boldSystemFont(ofSize: 11),
+            NSAttributedString.Key.paragraphStyle: paragraphStyle
+        ]
+
+        let width = statusBarItem.view?.frame.width ?? statusBarItem.image?.size.width ?? 27
+        let height = statusBarItem.view?.frame.height ?? statusBarItem.image?.size.height ?? 27
+
+        let outline = NSImage(size: NSSize(width: width, height: height ), flipped: false) { (dstRect) -> Bool in
+            let black = NSColor.black.withAlphaComponent(0.85)
+            black.setStroke()
+
+            let xStart = (width - 16) / 2 + 2,
+                yStart = (height - 16) / 2
+
+            let roundedRectanglePath = NSBezierPath(roundedRect: NSRect(x: xStart - 2, y: yStart, width: 16, height: 16), xRadius: 3, yRadius: 3)
+            roundedRectanglePath.lineWidth = 1.5
+            roundedRectanglePath.stroke()
+
+            return true
+        }
+
+        statusBarItem.button?.attributedTitle = NSAttributedString(string: "?", attributes: stringAttributes)
+
+        statusBarItem.button?.image = outline
+        statusBarItem.button?.image?.isTemplate = true
+
         statusBarItem.menu = statusMenu
     }
 
@@ -149,7 +178,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 
         if activeSpaceID == -1 {
             DispatchQueue.main.async {
-                self.statusBarItem.button?.title = "?"
+                self.statusBarItem.button?.attributedTitle = NSAttributedString(string: "?", attributes: self.stringAttributes)
             }
             return
         }
@@ -159,24 +188,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             let spaceNumber = index + 1
             if spaceID == activeSpaceID {
                 DispatchQueue.main.async {
-                    self.statusBarItem.button?.title = String("\(spaceNumber)")
+                    self.statusBarItem.button?.attributedTitle = NSAttributedString(string: String("\(spaceNumber)"), attributes: self.stringAttributes)
                 }
                 return
             }
         }
     }
 
-    func menuWillOpen(_ menu: NSMenu) {
-        if let cell = statusBarItem.button?.cell as! StatusItemCell? {
-            cell.isMenuVisible = true
-        }
-    }
-
-    func menuDidClose(_ menu: NSMenu) {
-        if let cell = statusBarItem.button?.cell as! StatusItemCell? {
-            cell.isMenuVisible = false
-        }
-    }
 
     @IBAction func checkForUpdatesClicked(_ sender: NSMenuItem) {
         updater.checkForUpdates(sender)
