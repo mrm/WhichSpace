@@ -27,8 +27,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 
     var stringAttributes: [NSAttributedString.Key : NSObject] = [:]
 
-    static var darkModeEnabled = false
-
     fileprivate func configureApplication() {
         application = NSApplication.shared
         // Specifying `.Accessory` both hides the Dock icon and allows
@@ -43,12 +41,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             selector: #selector(AppDelegate.updateActiveSpaceNumber),
             name: NSWorkspace.activeSpaceDidChangeNotification,
             object: workspace
-        )
-        DistributedNotificationCenter.default().addObserver(
-            self,
-            selector: #selector(updateDarkModeStatus(_:)),
-            name: NSNotification.Name("AppleInterfaceThemeChangedNotification"),
-            object: nil
         )
         NotificationCenter.default.addObserver(
             self,
@@ -124,15 +116,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         }
 
         source.resume()
-    }
-
-    @objc func updateDarkModeStatus(_ sender: AnyObject? = nil) {
-        let dictionary = UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain);
-        if let interfaceStyle = dictionary?["AppleInterfaceStyle"] as? NSString {
-            AppDelegate.darkModeEnabled = interfaceStyle.localizedCaseInsensitiveContains("dark")
-        } else {
-            AppDelegate.darkModeEnabled = false
-        }
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
